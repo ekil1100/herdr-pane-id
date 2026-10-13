@@ -1,0 +1,23 @@
+id = "local.pane-id"
+name = "Pane ID"
+version = "0.1.0"
+min_herdr_version = "0.9.3"
+description = "Prefix all pane labels with their current public IDs"
+platforms = ["linux", "macos"]
+
+[[startup]]
+command = ["bun", "index.js"]
+
+[[actions]]
+id = "sync"
+title = "Sync all pane IDs"
+contexts = ["workspace"]
+command = ["bun", "index.js"]
+
+[[events]]
+on = "pane.created"
+command = ["bun", "index.js"]
+
+[[events]]
+on = "pane.moved"
+command = ["bun", "index.js"]
