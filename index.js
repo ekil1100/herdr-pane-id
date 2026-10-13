@@ -9,6 +9,22 @@ export function desiredLabel(pane) {
   return `[${pane.pane_id}]${name ? ` ${name}` : ""}`;
 }
 
+export function desiredTabLabel(tab) {
+  const name = tab.label.replace(/^(?:\[w[^\s:\[\]]+:t[^\s:\[\]]+\](?: |$))+/, "");
+  return `[${tab.tab_id}]${name ? ` ${name}` : ""}`;
+}
+
+export function syncTabs(client = herdr) {
+  let changed = 0;
+  for (const tab of client("tab", "list").tabs) {
+    const label = desiredTabLabel(tab);
+    if (tab.label === label) continue;
+    client("tab", "rename", tab.tab_id, label);
+    changed += 1;
+  }
+  return changed;
+}
+
 export function herdr(...args) {
   const result = spawnSync(process.env.HERDR_BIN_PATH ?? "herdr", args, {
     encoding: "utf8",
@@ -43,7 +59,7 @@ if (import.meta.main) {
     if (process.env.HERDR_ENV !== "1") {
       throw new Error("Run through Herdr or inside a Herdr pane.");
     }
-    console.log(`Updated ${sync()} pane label(s).`);
+    console.log(`Updated ${syncTabs()} tab label(s) and ${sync()} pane label(s).`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exitCode = 1;

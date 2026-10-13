@@ -2,9 +2,10 @@
 
 ## Purpose
 
-A native Herdr plugin that prefixes all pane labels with their current public IDs:
+A native Herdr plugin that prefixes all tab and pane labels with their current public IDs:
 
 ```text
+[w1:t1] backend
 [w1:p3] pi
 [w1:p4] build
 ```
@@ -12,7 +13,7 @@ A native Herdr plugin that prefixes all pane labels with their current public ID
 Covers all workspaces and tabs in each session where the plugin is enabled.
 Existing names are preserved, repeated invocations skip unchanged labels, and
 pane moves replace the old ID. Herdr runs one-shot commands on server startup,
-`pane.created`, and `pane.moved`. There is no polling or background service.
+`tab.created`, `pane.created`, and `pane.moved`. There is no polling or background service.
 
 ## Installation
 
@@ -26,7 +27,11 @@ herdr plugin link "$PWD"
 herdr plugin action invoke local.pane-id.sync
 ```
 
-The action initializes existing panes immediately. Startup hooks run after server
+Herdr runs the plugin directly from this directory, so keep it available.
+Source changes apply on the next invocation. After changing the manifest, run
+`herdr plugin link "$PWD"` again to update the registration.
+
+The action initializes existing tabs and panes immediately. Startup hooks run after server
 restore, not when linking or enabling a plugin. Plugin registration is user-wide
 and available to other Herdr sessions too.
 
@@ -38,7 +43,11 @@ No configuration is required. To sync manually, including after a manual rename:
 herdr plugin action invoke local.pane-id.sync
 ```
 
-Existing explicit labels take priority. Unlabeled panes use their current plain
+Tab labels retain their existing names, with a `[w…:t…]` prefix. Manual tab
+renames receive the prefix on the next sync. Leading `[w…:t…]` tokens in tab
+labels are reserved for the plugin.
+
+Existing explicit pane labels take priority. Unlabeled panes use their current plain
 terminal title, then their agent name, or just the ID. Captured names become
 explicit labels and stay fixed when an application later changes its title.
 Leading `[w…:p…]` tokens are reserved for the plugin.

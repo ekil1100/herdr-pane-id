@@ -1,5 +1,47 @@
 import { expect, test } from "bun:test";
-import { desiredLabel, sync } from "./index.js";
+import { desiredLabel, desiredTabLabel, sync, syncTabs } from "./index.js";
+
+const tabCases = [
+  ["backend", "[w2:t3] backend"],
+  ["1", "[w2:t3] 1"],
+  ["", "[w2:t3]"],
+  ["[w1:t1] backend", "[w2:t3] backend"],
+  ["[w1:t1] [w2:t3] backend", "[w2:t3] backend"],
+  ["[w2:t3]", "[w2:t3]"],
+  ["[debug] backend", "[w2:t3] [debug] backend"],
+  ["[w1:p1] backend", "[w2:t3] [w1:p1] backend"],
+];
+
+test.each(tabCases)("preserves tab name %s", (label, expected) => {
+  expect(desiredTabLabel({ tab_id: "w2:t3", label })).toBe(expected);
+});
+
+test("syncs tabs across workspaces and skips unchanged labels", () => {
+  const tabs = [
+    { tab_id: "w1:t1", label: "backend" },
+    { tab_id: "w2:t1", label: "tests" },
+  ];
+  const calls = [];
+  const client = (...args) => {
+    calls.push(args);
+    if (args[1] === "list") return { tabs: structuredClone(tabs) };
+    const tab = tabs.find((tab) => tab.tab_id === args[2]);
+    tab.label = args[3];
+    return { tab: structuredClone(tab) };
+  };
+  expect(syncTabs(client)).toBe(2);
+  expect(calls).toEqual([
+    ["tab", "list"],
+    ["tab", "rename", "w1:t1", "[w1:t1] backend"],
+    ["tab", "rename", "w2:t1", "[w2:t1] tests"],
+  ]);
+  calls.length = 0;
+  expect(syncTabs(client)).toBe(0);
+  expect(calls).toEqual([["tab", "list"]]);
+  tabs[0].label = "renamed";
+  expect(syncTabs(client)).toBe(1);
+  expect(tabs[0].label).toBe("[w1:t1] renamed");
+});
 
 const cases = [
   [{ label: "build" }, "[wX:pT] build"],
